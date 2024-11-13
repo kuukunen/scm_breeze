@@ -143,6 +143,11 @@ end
 end
 
 def relative_path(base, target)
+  if target =~ /^.:/
+    target = target[0, 1].downcase + target[1..-1]
+    target.sub!(/^(.):/, '/mnt/\1')
+  end
+
   back = ""
   while target.sub(base,'') == target
     base = base.sub(/\/[^\/]*$/, '')
