@@ -100,10 +100,11 @@ fi
 if [ "$shell_ls_aliases_enabled" = "true" ] && builtin command -v ruby >/dev/null 2>&1; then
   # BSD ls is different to Linux (GNU) ls
   # Test for BSD ls
-  if ! (ls --version 2>/dev/null || echo "BSD") | grep GNU >/dev/null 2>&1; then
-    # ls is BSD
-    _ls_bsd="BSD"
-  fi
+
+  # if ! (ls --version 2>/dev/null || echo "BSD") | grep GNU >/dev/null 2>&1; then
+  #   # ls is BSD
+  #   _ls_bsd="BSD"
+  # fi
 
   # Test if readlink supports -f option, test for greadlink on Mac, then fallback to perl
   if \readlink -f / >/dev/null 2>&1; then
@@ -120,8 +121,9 @@ if [ "$shell_ls_aliases_enabled" = "true" ] && builtin command -v ruby >/dev/nul
     local ll_output
     local ll_command # Ensure sort ordering of the two invocations is the same
     if [ "$_ls_bsd" != "BSD" ]; then
-      ll_command=(\ls -hv --group-directories-first)
-      ll_output="$("${ll_command[@]}" -l --color "$@")"
+      ll_command=(\eza --all --long --color=always --group --icons=always --time-style=long-iso --color-scale=all)
+      plain_ll_command=(\eza --all --group)
+      ll_output="$("${ll_command[@]}" "$@")"
     else
       ll_command=(\ls)
       ll_output="$(CLICOLOR_FORCE=1 "${ll_command[@]}" -lG "$@")"
@@ -164,9 +166,9 @@ if [ "$shell_ls_aliases_enabled" = "true" ] && builtin command -v ruby >/dev/nul
       # Little bit of ruby golf to rejustify the user/group/size columns after replacement
       # TODO(ghthor): Convert this to a cat <<EOF to improve readibility
       function rejustify_ls_columns() {
-        ruby -e "o=STDIN.read;re=/^(([^ ]* +){2})(([^ ]* +){3})/;\
-                 u,g,s=o.lines.map{|l|l[re,3]}.compact.map(&:split).transpose.map{|a|a.map(&:size).max+1};\
-                 puts o.lines.map{|l|l.sub(re){|m|\"%s%-#{u}s %-#{g}s%#{s}s \"%[\$1,*\$3.split]}}"
+        # ruby -e "o=STDIN.read;re=/^(([^ ]* +){2})(([^ ]* +){3})/;\
+        #          u,g,s=o.lines.map{|l|l[re,3]}.compact.map(&:split).transpose.map{|a|a.map(&:size).max+1};\
+        #          puts o.lines.map{|l|l.sub(re){|m|\"%s%-#{u}s %-#{g}s%#{s}s \"%[\$1,*\$3.split]}}"
       }
 
       local USER_SYM=$(/bin/cat $HOME/.user_sym)
@@ -183,7 +185,7 @@ if [ "$shell_ls_aliases_enabled" = "true" ] && builtin command -v ruby >/dev/nul
     fi
 
     # Bail if there are two many lines to process
-    if [ "$(echo "$ll_output" | wc -l)" -gt "50" ]; then
+    if [ "$(echo "$ll_output" | wc -l)" -gt "99" ]; then
       echo -e '\033[33mToo many files to create shortcuts. Running plain ll command...\033[0m' >&2
       echo "$ll_output"
       return 1
@@ -194,7 +196,7 @@ if [ "$shell_ls_aliases_enabled" = "true" ] && builtin command -v ruby >/dev/nul
       \cat <<EOF
 output = STDIN.read
 e = 1
-re = /^(([^ ]* +){8})/
+re = /^(([^ ]* +){6})/
 output.lines.each do |line|
   next unless line.match(re)
   puts line.sub(re, "\\\1\033[2;37m[\033[0m#{e}\033[2;37m]\033[0m" << (e < 10 ? "  " : " "))
@@ -213,7 +215,7 @@ EOF
     # and this second call of `ls` then the $e# variables can refer to the
     # wrong files.
     if [ -z $_ls_bsd ]; then
-      ll_files="$(QUOTING_STYLE=literal "${ll_command[@]}" --color=never "$@")"
+      ll_files="$(QUOTING_STYLE=literal "${plain_ll_command[@]}" --color=never "$@")"
     else
       ll_files="$("${ll_command[@]}" "$@")"
     fi
