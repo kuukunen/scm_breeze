@@ -77,6 +77,11 @@ git_add_shortcuts() {
 }
 # Does nothing if no args are given.
 git_silent_add_shortcuts() {
+  local command_args=()
+  while [[ -n "$1" && $1 == -* ]]; do
+    command_args+=("$1")
+    shift
+  done
   if [ -n "$1" ]; then
     # Expand args and process resulting set of files.
     local args
@@ -87,7 +92,7 @@ git_silent_add_shortcuts() {
         echo -n "# "
         git rm "$file"
       else
-        git add "$file"
+        git add "${command_args[@]}" "$file"
         echo -e "# Added '$file'"
       fi
     done
