@@ -128,6 +128,10 @@ if [ "$shell_ls_aliases_enabled" = "true" ] && builtin command -v ruby >/dev/nul
       ll_command=(\ls)
       ll_output="$(CLICOLOR_FORCE=1 "${ll_command[@]}" -lG "$@")"
     fi
+    local err=$?
+    if [[ $err != 0 ]]; then
+      return $err
+    fi
 
     if [[ $shell == "zsh" ]]; then
       # Ensure sh_word_split is on
