@@ -20,18 +20,28 @@ git_status_shortcuts() {
   fail_if_not_git_repo || return 1
   zsh_compat # Ensure shwordsplit is on for zsh
   git_clear_vars
-  # Run ruby script, store output
-  local cmd_output="$(/usr/bin/env ruby "$scmbDir/lib/git/status_shortcuts.rb" "$@")"
-  # Print debug information if $scmbDebug = "true"
-  if [ "${scmbDebug:-}" = "true" ]; then
-    printf "status_shortcuts.rb output => \n$cmd_output\n------------------------\n"
-  fi
-  if [[ -z "$cmd_output" ]]; then
-    # Just show regular git status if ruby script returns nothing.
+ 
+  local git_dir="$(git rev-parse --git-dir)"
+  local cmd_output=
+  # Merge in progress
+  if [[ -f $git_dir/MERGE_HEAD || -d $git_dir/rebase-apply || -d $git_dir/rebase-merge || -f $git_dir/CHERRY_PICK_HEAD || -f $git_dir/BISECT_LOG ]]; then
     git status
-    echo -e "\n\033[33mThere were more than $gs_max_changes changed files. SCM Breeze has fallen back to standard \`git status\` for performance reasons.\033[0m"
-    return 1
+    return $?
+  else
+    # Run ruby script, store output
+    local cmd_output="$(/usr/bin/env ruby "$scmbDir/lib/git/status_shortcuts.rb" "$@")"
+    # Print debug information if $scmbDebug = "true"
+    if [ "${scmbDebug:-}" = "true" ]; then
+      printf "status_shortcuts.rb output => \n$cmd_output\n------------------------\n"
+    fi
+    if [[ -z "$cmd_output" ]]; then
+      # Just show regular git status if ruby script returns nothing.
+      git status
+      echo -e "\n\033[33mThere were more than $gs_max_changes changed files. SCM Breeze has fallen back to standard \`git status\` for performance reasons.\033[0m"
+      return 1
+    fi
   fi
+
   # Fetch list of files from last line of script output
   files="$(echo "$cmd_output" | \grep '@@filelist@@::' | sed 's%@@filelist@@::%%g')"
   if [ "${scmbDebug:-}" = "true" ]; then echo "filelist => $files"; fi
