@@ -145,7 +145,7 @@ end
 def relative_path(base, target)
   if target =~ /^.:/
     target = target[0, 1].downcase + target[1..-1]
-    target.sub!(/^(.):/, '/mnt/\1')
+    target.sub!(/^(.):/, '/\1')
   end
 
   back = ""
@@ -153,7 +153,12 @@ def relative_path(base, target)
     base = base.sub(/\/[^\/]*$/, '')
     back = "../#{back}"
   end
-  "#{back}#{target.sub("#{base}/",'')}"
+  ret = "#{back}#{target.sub("#{base}/",'')}"
+  if ret == ""
+    return "./"
+  else
+    ret
+  end
 end
 
 
