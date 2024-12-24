@@ -118,21 +118,6 @@ if [ "$shell_ls_aliases_enabled" = "true" ] && builtin command -v ruby >/dev/nul
   unalias ll >/dev/null 2>&1
   unset -f ll >/dev/null 2>&1
   function ls_with_file_shortcuts {
-    local ll_output
-    local ll_command # Ensure sort ordering of the two invocations is the same
-    if [ "$_ls_bsd" != "BSD" ]; then
-      ll_command=(\eza --all --long --color=always --group --icons=always --time-style=long-iso --color-scale=all)
-      plain_ll_command=(\eza --all --group)
-      ll_output="$("${ll_command[@]}" "$@")"
-    else
-      ll_command=(\ls)
-      ll_output="$(CLICOLOR_FORCE=1 "${ll_command[@]}" -lG "$@")"
-    fi
-    local err=$?
-    if [[ $err != 0 ]]; then
-      return $err
-    fi
-
     if [[ $shell == "zsh" ]]; then
       # Ensure sh_word_split is on
       [[ -o shwordsplit ]] && SHWORDSPLIT_ON=true
@@ -144,23 +129,52 @@ if [ "$shell_ls_aliases_enabled" = "true" ] && builtin command -v ruby >/dev/nul
     # multiple directories (issue #274)
     local IFS=$'\n'
     local rel_path
+    local path_count=0
     for arg in "$@"; do
       if [[ -e $arg ]]; then        # Path rather than option to ls
+        (( path_count++ ))
         if [[ -z $rel_path ]]; then # We are seeing our first pathname
           if [[ -d $arg ]]; then    # It's a directory
             rel_path=$arg
           else # It's a file, expand the current directory
             rel_path=.
           fi
-        elif [[ -d $arg || (-f $arg && $rel_path != .) ]]; then
-          if [[ -f $arg ]]; then arg=$PWD; fi # Get directory for current argument
-          # We've already seen a different directory. Quit to avoid damage (issue #274)
-          printf 'scm_breeze: Cannot list relative to both directories:\n  %s\n  %s\n' "$arg" "$rel_path" >&2
-          printf 'Currently only listing a single directory is supported. See issue #274.\n' >&2
-          return 1
+        # elif [[ -d $arg || (-f $arg && $rel_path != .) ]]; then
+        #   if [[ -f $arg ]]; then arg=$PWD; fi # Get directory for current argument
+        #   # We've already seen a different directory. Quit to avoid damage (issue #274)
+        #   printf 'scm_breeze: Cannot list relative to both directories:\n  %s\n  %s\n' "$arg" "$rel_path" >&2
+        #   printf 'Currently only listing a single directory is supported. See issue #274.\n' >&2
+        #   return 1
         fi
       fi
     done
+    if (( path_count != 1 )); then
+      rel_path=.
+    fi
+    local ll_output
+    local ll_command # Ensure sort ordering of the two invocations is the same
+    if [[ $path_count -le 1 ]]; then
+      if [[ $path_count == 1 ]]; then
+        echo "Listing directory: $rel_path"
+      fi
+      ll_command=(\eza --all --long --color=always --group --icons=always --time-style=long-iso --color-scale=all)
+      plain_ll_command=(\eza --all --group)
+      ll_output="$("${ll_command[@]}" "$@")"
+    else
+      if [ "$_ls_bsd" != "BSD" ]; then
+        ll_command=(\eza --all -d --long --color=always --group --icons=always --time-style=long-iso --color-scale=all)
+        plain_ll_command=(\eza --all -d --group)
+        ll_output="$("${ll_command[@]}" "$@")"
+      else
+        ll_command=(\ls)
+        ll_output="$(CLICOLOR_FORCE=1 "${ll_command[@]}" -lG "$@")"
+      fi
+    fi
+    local err=$?
+    if [[ $err != 0 ]]; then
+      return $err
+    fi
+
     rel_path=$("${_abs_path_command[@]}" ${rel_path:-$PWD})
 
     # Replace user/group with user symbol, if defined at ~/.user_sym
