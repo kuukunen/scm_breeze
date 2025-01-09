@@ -21,7 +21,12 @@ git_status_shortcuts() {
   zsh_compat # Ensure shwordsplit is on for zsh
   git_clear_vars
  
-  local git_dir="$(wslpath "$(git rev-parse --git-dir)")"
+  local git_dir=
+  if command -v wslpath >/dev/null 2>&1; then
+    local git_dir="$(wslpath "$(git rev-parse --git-dir)" 2>&1)"
+  else
+    local git_dir="$(git rev-parse --git-dir)"
+  fi
   local cmd_output=
   # Merge in progress
   if [[ -f $git_dir/MERGE_HEAD || -d $git_dir/rebase-apply || -d $git_dir/rebase-merge || -f $git_dir/CHERRY_PICK_HEAD || -f $git_dir/BISECT_LOG ]]; then
