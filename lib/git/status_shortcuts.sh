@@ -18,7 +18,7 @@
 # --------------------------------------------------------------------
 git_status_shortcuts() {
   fail_if_not_git_repo || return 1
-  #zsh_compat # Ensure shwordsplit is on for zsh
+  zsh_compat # Ensure shwordsplit is on for zsh
   git_clear_vars
  
   local git_dir=
@@ -31,6 +31,7 @@ git_status_shortcuts() {
   # Merge in progress
   if [[ -f $git_dir/MERGE_HEAD || -d $git_dir/rebase-apply || -d $git_dir/rebase-merge || -f $git_dir/CHERRY_PICK_HEAD || -f $git_dir/BISECT_LOG ]]; then
     git status
+    zsh_reset # Reset zsh environment to default
     return $?
   else
     # Run ruby script, store output
@@ -43,6 +44,7 @@ git_status_shortcuts() {
       # Just show regular git status if ruby script returns nothing.
       git status
       echo -e "\n\033[33mThere were more than $gs_max_changes changed files. SCM Breeze has fallen back to standard \`git status\` for performance reasons.\033[0m"
+      zsh_reset # Reset zsh environment to default
       return 1
     fi
   fi
