@@ -18,7 +18,7 @@
 # --------------------------------------------------------------------
 git_status_shortcuts() {
   fail_if_not_git_repo || return 1
-  zsh_compat # Ensure shwordsplit is on for zsh
+  #zsh_compat # Ensure shwordsplit is on for zsh
   git_clear_vars
  
   local git_dir=
