@@ -172,6 +172,7 @@ if [ "$shell_ls_aliases_enabled" = "true" ] && builtin command -v ruby >/dev/nul
     fi
     local err=$?
     if [[ $err != 0 ]]; then
+      if [[ $shell == "zsh" && -z $SHWORDSPLIT_ON ]]; then unsetopt shwordsplit; fi
       return $err
     fi
 
@@ -206,6 +207,7 @@ if [ "$shell_ls_aliases_enabled" = "true" ] && builtin command -v ruby >/dev/nul
     if [ "$(echo "$ll_output" | wc -l)" -gt "99" ]; then
       echo -e '\033[33mToo many files to create shortcuts. Running plain ll command...\033[0m' >&2
       echo "$ll_output"
+      if [[ $shell == "zsh" && -z $SHWORDSPLIT_ON ]]; then unsetopt shwordsplit; fi
       return 1
     fi
 
